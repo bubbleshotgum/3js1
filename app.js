@@ -5,7 +5,7 @@ const renderer = new THREE.WebGLRenderer({alpha: true})
 renderer.setSize( window.innerWidth, window.innerHeight )
 document.body.appendChild( renderer.domElement )
 
-let dropGeometry = new THREE.PlaneBufferGeometry(4, 4)
+let dropGeometry = new THREE.PlaneBufferGeometry(8, 8)
 
 const tLoader = new THREE.TextureLoader()
 let textures = [
@@ -18,9 +18,9 @@ for(let i = 0; i < 10; i++)
 	let dice = Math.floor(Math.random() * textures.length)
 	let material = new THREE.MeshBasicMaterial({map: textures[dice]})
 	drop.push(new THREE.Mesh(dropGeometry, material))
-	drop[i].position.x = Math.random() * 10
-	drop[i].position.y = Math.random() * 10
-	drop[i].position.z = -Math.random() * 50
+	drop[i].position.x = Math.random() * 30 * (Math.random() > 0.5 ? 1 : -1)
+	drop[i].position.y = Math.random() * 30 * (Math.random() > 0.5 ? 1 : -1)
+	drop[i].position.z = -Math.random() * 100
 	//drop[i].rotation.y = Math.random()
 	//drop[i].rotation.x = Math.random()
 	scene.add(drop[i])
@@ -30,6 +30,9 @@ let light = new THREE.AmbientLight(0xffffff, 1)
 scene.add(light)
 camera.position.z = 5
 function animate() {
+	drop.forEach(drop_ => {
+		drop_.position.z += .018
+	})
 	requestAnimationFrame( animate )
 	renderer.render( scene, camera )
 }
