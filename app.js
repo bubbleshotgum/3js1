@@ -8,31 +8,36 @@ document.body.appendChild( renderer.domElement )
 let dropGeometry = new THREE.PlaneBufferGeometry(8, 8)
 
 const tLoader = new THREE.TextureLoader()
-let textures = [
-	tLoader.load('logo.jpeg'),
+let dropTextures = [
 	tLoader.load('drop1.jpeg'),
-	tLoader.load('drop2.jpeg')]
-let drop = []
-for(let i = 0; i < 10; i++)
+	tLoader.load('drop2.jpeg')],
+	logoTexture = tLoader.load('logo.jpeg')
+let drop = [],
+	logo = new THREE.Mesh(
+		new THREE.PlaneBufferGeometry(50, 50),
+		new THREE.MeshBasicMaterial({map: logoTexture})
+	)
+scene.add(logo)
+for(let i = 0; i < 20; i++)
 {
-	let dice = Math.floor(Math.random() * textures.length)
-	let material = new THREE.MeshBasicMaterial({map: textures[dice]})
+	let dice = Math.floor(Math.random() * dropTextures.length)
+	let material = new THREE.MeshBasicMaterial({map: dropTextures[dice]})
 	drop.push(new THREE.Mesh(dropGeometry, material))
-	drop[i].position.x = Math.random() * 30 * (Math.random() > 0.5 ? 1 : -1)
-	drop[i].position.y = Math.random() * 30 * (Math.random() > 0.5 ? 1 : -1)
-	drop[i].position.z = -Math.random() * 100
-	//drop[i].rotation.y = Math.random()
-	//drop[i].rotation.x = Math.random()
+	drop[i].position.x = (Math.random() * 30 + 10) * (Math.random() > 0.5 ? 1 : -1)
+	drop[i].position.y = (Math.random() * 30 + 10) * (Math.random() > 0.5 ? 1 : -1)
+	drop[i].position.z = -Math.random() * 100 - 20
 	scene.add(drop[i])
 }
 
-let light = new THREE.AmbientLight(0xffffff, 1)
-scene.add(light)
-camera.position.z = 5
+//let light = new THREE.AmbientLight(0xffffff, 1)
+//scene.add(light)
+const initialCameraZPos = 35
+camera.position.z = initialCameraZPos
 function animate() {
-	drop.forEach(drop_ => {
-		drop_.position.z += .018
-	})
+	if(camera.position.z <= 0)
+		drop.forEach(drop_ => {
+			drop_.position.z += .018
+		})
 	requestAnimationFrame( animate )
 	renderer.render( scene, camera )
 }
@@ -40,7 +45,8 @@ requestAnimationFrame(animate)
 
 
 function animateScroll(event) {
-	camera.position.z -= event.deltaY * 0.015
-	console.log(camera.position.z)
+	if(camera.position.z <= initialCameraZPos || event.deltaY > 0)
+		camera.position.z = camera.position.z - event.deltaY * 0.015 > initialCameraZPos ? initialCameraZPos : camera.position.z - event.deltaY * 0.015
+	//console.log(camera.position.z)
 }
 window.addEventListener('wheel', animateScroll)
