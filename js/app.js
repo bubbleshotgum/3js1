@@ -1,30 +1,29 @@
-//import {GLTFLoader} from "./GLTFLoader.js"
 import { SmoothControls } from "./SmoothControls.js"
-import { TextGeometry } from "./TextGeometry.js"
-import { FontLoader } from "./FontLoader.js"
+import * as THREE from "./three.module.js"
 
 const ASIMPTOTE = 100
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 )
 const renderer = new THREE.WebGLRenderer({alpha: true})
-const controls = new SmoothControls(camera, renderer.domElement)
-controls.translateX = controls.translateY = false
-controls.maxPos = ASIMPTOTE + 5
+const controls = new SmoothControls(camera)
+controls.setTranslate(false, false, true)
+controls.maxPos = ASIMPTOTE + 6
 
 scene.background = new THREE.Color(0xffffff)
 renderer.setSize( window.innerWidth, window.innerHeight )
 document.body.appendChild( renderer.domElement )
 
 const tLoader = new THREE.TextureLoader()
+const PATH_TO_PIXTURES = "../assets/pictures/"
 let assetsTextures = [
-		tLoader.load('asset1.png'),
-		tLoader.load('asset2.jpeg')
+		tLoader.load(PATH_TO_PIXTURES + 'asset1.png'),
+		tLoader.load(PATH_TO_PIXTURES + 'asset2.jpeg')
 	],
 	dropsTextures = [
-		tLoader.load('drop1.png'),
-		tLoader.load('drop2.png')
+		tLoader.load(PATH_TO_PIXTURES + 'drop1.png'),
+		tLoader.load(PATH_TO_PIXTURES + 'drop2.png')
 	],
-	logoTexture = tLoader.load('logo.png')
+	logoTexture = tLoader.load(PATH_TO_PIXTURES + 'logo.png')
 
 let assetsObjects = [],
 	drops = [],
@@ -38,39 +37,15 @@ let assetsObjects = [],
 		new THREE.PlaneBufferGeometry(window.innerWidth, window.innerHeight),
 		new THREE.MeshBasicMaterial({color: 0xffffff})
 	),
-	logoScaler = new SmoothControls(logo, renderer.domElement)
+	logoScaler = new SmoothControls(logo, true)
 logo.position.z = ASIMPTOTE
 logoBackground.position.z = ASIMPTOTE -.0005
-logoScaler.translateX = logoScaler.translateY = logoScaler.translateZ = false
-logoScaler.scaleX = logoScaler.scaleY = true
+logoScaler.setTranslate(false, false, false)
+logoScaler.setScale(true, true, false)
 logoScaler.maxScale = 2
 scene.add(logo)
 scene.add(logoBackground)
 
-/*
-const fontLoader = new FontLoader()
-fontLoader.load(
-	"font.json",
-	function(font) {
-		const text = new THREE.Mesh(
-			new TextGeometry(
-				"MISSIONS", {
-					font: font,
-					size: 1,
-					height: 0,
-					curveSegments: 100
-				}),
-			new THREE.MeshBasicMaterial({color: 0}))
-		scene.add(text)
-	},
-	function ( xhr ) {
-		console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
-	},
-	function ( err ) {
-		console.log( 'An error happened:', err );
-	}
-)
-*/
 
 for(let i = 0; i < 6; i++)
 {
@@ -83,8 +58,8 @@ for(let i = 0; i < 6; i++)
 		3 * Math.sin((i + 1) * Math.PI / 3) - (i + 1) / 6,
 		ASIMPTOTE -0.0001
 	)
-	dropControls.push(new SmoothControls(drops[i], renderer.domElement))
-	dropControls[i].translateZ = false
+	dropControls.push(new SmoothControls(drops[i]))
+	dropControls[i].setTranslate(true, true, false)
 	dropControls[i].minPos = 0
 	dropControls[i].maxPos = Math.max(
 		drops[i].position.x,
@@ -110,7 +85,6 @@ for(let i = 0; i < 40; i++)
 
 camera.position.z = controls.maxPos
 
-
 /*
 const loader = new GLTFLoader()
 loader.load(
@@ -131,12 +105,14 @@ function animate() {
 	{
 		case "initial":
 			dropControls.forEach(control => {
+				if (! control.embarked)
+					control.embark()
 				control.update()
-				console.log(control.object.position)
 			})
+			if(! logoScaler.embarked)
+				logoScaler.embark()
 			logoScaler.update()
-			if(logo.scale.x === logoScaler.maxScale)
-			{
+			if(logo.scale.x === logoScaler.maxScale) {
 				drops.forEach(drop => {
 					scene.remove(drop)
 				})
@@ -149,6 +125,8 @@ function animate() {
 			}
 			break
 		case "zoom":
+			if(!controls.embarked)
+				controls.embark()
 			controls.update()
 			if(camera.position.z <= ASIMPTOTE)
 				assetsObjects.forEach(asset => {
