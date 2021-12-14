@@ -105,11 +105,10 @@ controls.embark()
 let time = 0, 
 	effect1 = new ShaderPass( CustomPass )
 effect1.uniforms[ 'time' ].value = 0
-effect1.uniforms[ 'scale' ].value = 2.5
+effect1.uniforms[ 'scale' ].value = .75
 effect1.uniforms[ 'progress' ].value = 0
 
 composer.addPass( effect1 )
-//composer.addPass( effect2 )
 let STATE = "initial"
 
 function animate() {
