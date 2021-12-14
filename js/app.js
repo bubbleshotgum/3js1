@@ -68,7 +68,7 @@ loader.load("blacklight.json", function ( font ) {
 let assetsTextures = assets.map(asset => tLoader.load(PATH_TO_FILES + asset))
 let assetsObjects = []
 
-const geometry = new THREE.PlaneGeometry(4, 4, 12, 12)
+const geometry = new THREE.PlaneGeometry(8, 8, 12, 12)
 const material = new THREE.ShaderMaterial({
 	extensions: {
 		derivatives: "#extension GL_OES_standard_derivatives : enable"
