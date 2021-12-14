@@ -61,14 +61,17 @@ const CustomPass = {
 		void main() {
 			vec2 newUV = vUv;
 
-			vec2 p = 2.*vUv - vec2(1.);
-			p += 0.1*cos(scale * 2.*p.yx + time + vec2(1.2, 3.4));
-			p += 0.1*cos(scale * 3.7*p.yx + 1.4*time + vec2(2.2, 3.4));
-			p += 0.1*cos(scale * 5.*p.yx + 2.6*time + vec2(4.2, 1.4));
-			p += 0.3*cos(scale * 7.*p.yx + 3.6*time + vec2(10.2, 3.4));
+			if(progress > 0.)
+			{
+				vec2 p = 2.*vUv - vec2(1.);
+				p += 0.1*cos(scale * 2.*p.yx + time + vec2(1.2, 3.4));
+				p += 0.1*cos(scale * 3.7*p.yx + 1.4*time + vec2(2.2, 3.4));
+				p += 0.1*cos(scale * 5.*p.yx + 2.6*time + vec2(4.2, 1.4));
+				p += 0.3*cos(scale * 7.*p.yx + 3.6*time + vec2(10.2, 3.4));
 
-			newUV.x = mix(vUv.x,length(p),progress);
-			newUV.y = mix(vUv.y,0.,progress);
+				newUV.x = mix(vUv.x,length(p),progress);
+				newUV.y = mix(vUv.y,0.,progress);
+			}
 
 			vec4 color = texture2D(tDiffuse, newUV);
 			gl_FragColor = color;
