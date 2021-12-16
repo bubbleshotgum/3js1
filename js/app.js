@@ -1,18 +1,8 @@
 import * as THREE from "../node_modules/three/build/three.module.js"
 
 import { SmoothControls } from "./SmoothControls.js"
-
-import { FontLoader } from "../node_modules/three/examples/jsm/loaders/FontLoader.js"
-import { TextGeometry } from "../node_modules/three/examples/jsm/geometries/TextGeometry.js"
-
-import { EffectComposer } from '../node_modules/three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from '../node_modules/three/examples/jsm/postprocessing/RenderPass.js'
-import { ShaderPass } from '../node_modules/three/examples/jsm/postprocessing/ShaderPass.js'
 import { CustomPass } from "./CustomPass.js"
-
-var fragment = require("../shader/fragment.glsl")
-var vertex = require("../shader/vertex.glsl")
-
+import { SVGLoader } from "../node_modules/three/examples/jsm/loaders/SVGLoader.js"
 
 // ДЕКЛАРАЦИЯ КОНСТАНТ
 const container = document.getElementById('container')
@@ -22,9 +12,6 @@ const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 )
 const renderer = new THREE.WebGLRenderer({alpha: true})
 renderer.setPixelRatio(window.devicePixelRatio)
-const composer = new EffectComposer( renderer )
-composer.setPixelRatio(renderer.getPixelRatio())
-composer.addPass( new RenderPass( scene, camera ) )
 
 const controls = new SmoothControls(camera)
 controls.setTranslate(false, false, true)
@@ -32,43 +19,73 @@ controls.maxPos = ASIMPTOTE + 12
 
 scene.background = new THREE.Color(0xffffff)
 renderer.setSize( window.innerWidth, window.innerHeight )
-composer.setSize( window.innerWidth, window.innerHeight )
 container.appendChild( renderer.domElement )
 
 const tLoader = new THREE.TextureLoader()
+const sLoader = new SVGLoader()
 
 // ПРИНИМАЕТ НА ВХОД JSON ИЗ БЭКА
 const PATH_TO_FILES = "../assets/pictures/"
 const assets = [
 	"asset1.png",
 	"asset2.jpeg",
+	"asset3.jpg",
+	"asset4.jpg",
 	"drop1.png",
 	"drop2.png"
 ]
 
 // ИНИЦИАЛИЗАЦИЯ ОБЪЕКТОВ
-
-const loader = new FontLoader();
-const TEXT_SIZE = 5
-loader.load("blacklight.json", function ( font ) {
-	const currExText = new THREE.Mesh(
-			new TextGeometry("Current\nExhibition", {
-			font: font,
-			size: TEXT_SIZE,
-			height: 0,
-			curveSegments: 64
-		}),
-		new THREE.MeshBasicMaterial({ color: 0 })
+let logo = null
+tLoader.load(PATH_TO_FILES + 'currEx.svg', texture => {
+	logo = new THREE.Mesh(
+		new THREE.PlaneGeometry(14, 4, 16, 16),
+		new THREE.MeshBasicMaterial({
+			map: texture,
+			transparent: true,
+			//opacity: .5
+		})
 	)
-	currExText.position.x -= TEXT_SIZE * 2.5
-	currExText.position.y += TEXT_SIZE * .7
-	currExText.position.z = ASIMPTOTE
-	scene.add(currExText)
-} )
-let assetsTextures = assets.map(asset => tLoader.load(PATH_TO_FILES + asset))
-let assetsObjects = []
+	logo.position.z = ASIMPTOTE
+	scene.add(logo)
+})
 
-const geometry = new THREE.PlaneGeometry(4, 4, 12, 12)
+window.addEventListener('resize', () => {
+	camera.aspect = window.innerWidth / window.innerHeight
+	renderer.setSize( window.innerWidth, window.innerHeight )
+	camera.updateProjectionMatrix
+})
+
+// sLoader.load(PATH_TO_FILES + 'currEx.svg', svg => {
+// 	const paths = svg.paths
+// 	const group = new THREE.Group()
+// 	for ( let i = 0; i < paths.length; i ++ ) {
+
+// 		const path = paths[ i ];
+
+// 		const material = new THREE.MeshBasicMaterial( {
+// 			color: path.color,
+// 			side: THREE.DoubleSide,
+// 			depthWrite: false
+// 		} );
+		
+// 		const shapes = SVGLoader.createShapes( path );
+
+// 		for ( let j = 0; j < shapes.length; j ++ ) {
+// 			const shape = shapes[ j ]
+// 			const geometry = new THREE.ShapeGeometry( shape )
+// 			const mesh = new THREE.Mesh( geometry, material )
+// 			group.add( mesh )
+// 			scene.add(group)
+// 		}
+// 	}
+// })
+
+let assetsTextures = assets.map(asset => tLoader.load(PATH_TO_FILES + asset)),
+	assetsObjects = [],
+	progresses = assets.map(() => Math.max(.3, Math.random() / 2))
+
+const geometry = new THREE.PlaneGeometry(12, 12, 12, 12)
 const material = new THREE.ShaderMaterial({
 	extensions: {
 		derivatives: "#extension GL_OES_standard_derivatives : enable"
@@ -76,21 +93,26 @@ const material = new THREE.ShaderMaterial({
 	side: THREE.DoubleSide,
 	uniforms: {
 		time: { value: 0 },
+		progress: { value: 0 },
+		scale: { value: .3 },
+		modifier: { value: 1 },
 		uTexture: { value: assetsTextures[0] },
 		resolution: { value: new THREE.Vector4() }
 	},
-	vertexShader: vertex,
-	fragmentShader: fragment
+	vertexShader: CustomPass.vertexShader,
+	fragmentShader: CustomPass.fragmentShader
 })
 
-assetsTextures.forEach( texture => {
+assetsTextures.forEach( (texture, index) => {
 	let m = material.clone()
 	m.uniforms.uTexture.value = texture
+	m.uniforms.modifier.value = Math.min(.2, Math.random() + .1)
+	m.uniforms.scale.value = Math.max(.75, Math.random() * 1.2)
 	let obj = new THREE.Mesh(geometry, m)
 	scene.add(obj)
 	assetsObjects.push(obj)
 	obj.position.set(
-		Math.random() * ASIMPTOTE / 1.5 * (Math.random() > .5 ? 1 : -1),
+		Math.random() * ASIMPTOTE * Math.cos(index) * 2 * (Math.random() > .5 ? 1 : -1),
 		Math.random() * ASIMPTOTE / 4 * (Math.random() > .5 ? 1 : -1),
 		Math.max(
 			ASIMPTOTE * (1 - 2 * Math.random() / 5) / 1.5 - 15,
@@ -102,13 +124,7 @@ assetsTextures.forEach( texture => {
 camera.position.z = controls.maxPos
 controls.embark()
 
-let time = 0, 
-	effect1 = new ShaderPass( CustomPass )
-effect1.uniforms[ 'time' ].value = 0
-effect1.uniforms[ 'scale' ].value = .75
-effect1.uniforms[ 'progress' ].value = 0
-
-composer.addPass( effect1 )
+let time = 0
 let STATE = "initial"
 
 function animate() {
@@ -116,20 +132,24 @@ function animate() {
 	switch(STATE)
 	{
 		case "initial":
-			effect1.uniforms[ 'progress' ].value = 0
+			assetsObjects.forEach(obj => {
+				obj.material.uniforms.progress.value = 0
+			})
 			if(camera.position.z <= ASIMPTOTE)
 				STATE = "distort"
 			break
 		case "distort":
 			time += .01
-			effect1.uniforms[ 'time' ].value = time
-			effect1.uniforms[ 'progress' ].value = .05
 			material.uniforms.time.value = time
+			assetsObjects.forEach((obj, index) => {
+				obj.material.uniforms.progress.value = progresses[index]
+				obj.material.uniforms.time.value = time
+			})
 			if(camera.position.z >= ASIMPTOTE)
 				STATE = "initial"
 			break
 	}
 	controls.update()
-	composer.render()
+	renderer.render(scene, camera)
 }
 requestAnimationFrame(animate)
